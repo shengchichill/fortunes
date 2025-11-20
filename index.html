@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>日式御神籤</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f1e8;
+            --primary-red: #d9333f;
+            --text-black: #2b2b2b;
+            --omikuji-paper-color: #fffbe8;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Noto Serif JP', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--text-black);
+            background-image: radial-gradient(#e0dbcd 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            letter-spacing: 5px;
+            border-bottom: 2px solid var(--primary-red);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        /* --- 介面容器 --- */
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+            transition: opacity 0.3s, filter 0.3s;
+        }
+
+        .shaker-box {
+            width: 150px;
+            height: 220px;
+            background: var(--primary-red);
+            margin: 0 auto 30px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(217, 51, 63, 0.3);
+            border: 4px solid #b01e29;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 10px;
+            transform-origin: bottom center;
+        }
+
+        .shaking {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-2deg); }
+            20%, 80% { transform: translate3d(4px, 0, 0) rotate(4deg); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-6deg); }
+            40%, 60% { transform: translate3d(6px, 0, 0) rotate(6deg); }
+        }
+
+        /* --- 動畫區塊 --- */
+        #anim-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        /* --- 核心紙捲 --- */
+        #magic-scroll {
+            position: relative;
+            background-color: var(--omikuji-paper-color); /* 這是圖片還沒出來時看到的顏色 */
+            
+            /* 初始狀態 */
+            transform: translateY(-150vh) rotate(10deg);
+            width: 20px;
+            height: 180px;
+            border-radius: 5px;
+            
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            
+            transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1),
+                        width 1s ease-in-out,
+                        height 1s ease-in-out,
+                        border-radius 1s ease-in-out;
+        }
+
+        #magic-scroll.falling {
+            transform: translateY(0) rotate(720deg);
+        }
+
+        #magic-scroll.expanded {
+            width: 300px;
+            height: 500px;
+            border-radius: 2px;
+        }
+
+        /* --- 內容圖片 (主要修改處) --- */
+        #result-img {
+            display: block;
+            width: 300px;
+            height: 500px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            
+            /* 【修改點 1】預設透明度為 0 */
+            opacity: 0;
+            /* 【修改點 2】加入 opacity 的轉場動畫，時間設為 1.2秒，稍微比展開慢一點點，營造浮現感 */
+            transition: opacity 1.2s ease-in; 
+        }
+
+        /* 當加上 .reveal 類別時，圖片顯現 */
+        #result-img.reveal {
+            opacity: 1;
+        }
+
+        /* --- 裝飾 --- */
+        .rope {
+            position: absolute;
+            left: 0; width: 100%; height: 4px;
+            background-color: var(--primary-red);
+            z-index: 10;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .rope.top { top: 40px; }
+        .rope.bottom { bottom: 40px; }
+        
+        .rope.vanish { opacity: 0; transform: scaleX(0); }
+
+        #shadow-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(0,0,0,0.1), rgba(255,255,255,0.5) 40%, rgba(0,0,0,0.1));
+            z-index: 9;
+            transition: opacity 0.8s;
+        }
+        .shadow-vanish { opacity: 0; }
+
+        /* --- 按鈕區域 --- */
+        #action-buttons {
+            position: fixed;
+            bottom: 130px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .show-buttons {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .btn-download { background-color: var(--primary-red); color: white; }
+        .btn-retry { background-color: white; border: 1px solid var(--text-black); color: var(--text-black); }
+
+        .hidden-canvas { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="start-screen">
+        <h1>期中充電站</h1>
+        <p class="subtitle">誠心誠意，點擊籤筒求籤</p>
+        <div class="shaker-box" id="draw-btn">歐趴籤</div>
+    </div>
+
+    <div id="anim-overlay">
+        <div id="magic-scroll">
+            <div id="shadow-overlay"></div>
+            <div class="rope top"></div>
+            <div class="rope bottom"></div>
+            
+            <img id="result-img" src="" alt="籤詩">
+        </div>
+    </div>
+
+    <div id="action-buttons">
+        <button class="btn btn-retry" onclick="reset()">重抽</button>
+        <button class="btn btn-download" onclick="downloadImage()">下載籤詩</button>
+    </div>
+
+    <canvas id="omikujiCanvas" class="hidden-canvas"></canvas>
+
+    <script>
+        const fortunes = [
+            { title: "大吉", content: "枯木逢春猶再發，\n萬事如意喜臨門。\n心存善念天必佑，\n宏圖大展待此時。", color: "#d9333f" },
+            { title: "中吉", content: "風平浪靜可行舟，\n恰是中秋月一輪。\n前程錦繡無須問，\n福祿雙全喜氣新。", color: "#d9333f" },
+            { title: "小吉", content: "細雨濛濛濕衣襟，\n這般光景費沈吟。\n待得雲開天色破，\n依舊清光照眼新。", color: "#c75a5a" },
+            { title: "吉", content: "意欲向東反向西，\n且將心事暫相依。\n若能守得安常處，\n便有貴人提路迷。", color: "#c75a5a" },
+            { title: "末吉", content: "目前運勢未全開，\n且守家門舊業來。\n直待春風吹送暖，\n自然花木滿園開。", color: "#555" },
+        ];
+
+        const drawBtn = document.getElementById('draw-btn');
+        const startScreen = document.getElementById('start-screen');
+        const animOverlay = document.getElementById('anim-overlay');
+        const magicScroll = document.getElementById('magic-scroll');
+        const resultImg = document.getElementById('result-img');
+        const ropes = document.querySelectorAll('.rope');
+        const shadowOverlay = document.getElementById('shadow-overlay');
+        const actionButtons = document.getElementById('action-buttons');
+        const canvas = document.getElementById('omikujiCanvas');
+        const ctx = canvas.getContext('2d');
+
+        drawBtn.addEventListener('click', function() {
+            // A. 生成圖片 (此時圖片 opacity 是 0，所以使用者看不到)
+            const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+            generateImage(randomFortune);
+
+            // B. 搖晃
+            drawBtn.classList.add('shaking');
+
+            // C. 掉落 (0.6s後)
+            setTimeout(() => { 
+                startScreen.style.filter = 'blur(3px) grayscale(0.1)';
+                animOverlay.style.display = 'flex'; 
+                void magicScroll.offsetWidth; // 強制重繪
+                
+                magicScroll.classList.add('falling');
+                // 此階段圖片還是隱藏的，所以看到的是純淨的米色紙捲
+            }, 600);
+
+            // D. 展開 + 顯影 (1.6s後)
+            setTimeout(() => {
+                startScreen.style.opacity = 0;
+
+                ropes.forEach(r => r.classList.add('vanish'));
+                shadowOverlay.classList.add('shadow-vanish');
+                
+                // 紙捲變寬
+                magicScroll.classList.add('expanded');
+                
+                // 【修改點 3】開始讓圖片顯影
+                resultImg.classList.add('reveal');
+
+            }, 1600);
+
+            // E. 結束 (2.6s後)
+            setTimeout(() => {
+                drawBtn.classList.remove('shaking');
+                startScreen.style.display = 'none';
+                actionButtons.classList.add('show-buttons');
+            }, 2600);
+        });
+
+        function reset() {
+            startScreen.style.filter = 'none';
+            startScreen.style.display = 'block';
+            setTimeout(() => startScreen.style.opacity = 1, 10);
+
+            animOverlay.style.display = 'none';
+            actionButtons.classList.remove('show-buttons');
+
+            // 重置動畫狀態
+            magicScroll.classList.remove('falling', 'expanded');
+            ropes.forEach(r => r.classList.remove('vanish'));
+            shadowOverlay.classList.remove('shadow-vanish');
+            
+            // 【修改點 4】重置圖片透明度
+            resultImg.classList.remove('reveal');
+        }
+
+        // Canvas 生成邏輯 (不變)
+        function generateImage(fortune) {
+            const width = 600;
+            const height = 1000;
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.fillStyle = '#fffbe8';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#d9333f';
+            ctx.strokeRect(20, 20, width - 40, height - 40);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(30, 30, width - 60, height - 60);
+
+            ctx.fillStyle = '#d9333f';
+            ctx.beginPath();
+            ctx.arc(width / 2, 120, 60, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 40px "Noto Serif JP", serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("運勢", width / 2, 135);
+
+            ctx.fillStyle = fortune.color;
+            ctx.font = '900 140px "Noto Serif JP", serif';
+            const title = fortune.title;
+            if (title.length === 2) {
+                ctx.fillText(title[0], width / 2, 320);
+                ctx.fillText(title[1], width / 2, 460);
+            } else {
+                ctx.fillText(title, width / 2, 400);
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(100, 520);
+            ctx.lineTo(width - 100, 520);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#333';
+            ctx.font = '500 36px "Noto Serif JP", serif';
+            const lines = fortune.content.split('\n');
+            let startY = 600;
+            const lineHeight = 70;
+            lines.forEach((line, index) => {
+                ctx.fillText(line, width / 2, startY + (index * lineHeight));
+            });
+
+            ctx.fillStyle = '#999';
+            ctx.font = '24px "Noto Serif JP", serif';
+            ctx.fillText("── 此籤誠心求得 ──", width / 2, 900);
+            
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+            ctx.fillText(dateStr, width / 2, 940);
+
+            resultImg.src = canvas.toDataURL('image/png');
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'bookmark.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
