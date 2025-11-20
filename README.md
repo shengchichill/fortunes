@@ -1,1 +1,1 @@
-# fortunes.github.io
+# fortunes
