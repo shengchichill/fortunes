@@ -110,16 +110,16 @@
         #magic-scroll {
             position: relative;
             background-color: var(--omikuji-paper-color); /* 這是圖片還沒出來時看到的顏色 */
-            
+
             /* 初始狀態 */
             transform: translateY(-150vh) rotate(10deg);
             width: 20px;
             height: 180px;
             border-radius: 5px;
-            
+
             box-shadow: 0 15px 30px rgba(0,0,0,0.3);
             overflow: hidden;
-            
+
             transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1),
                         width 1s ease-in-out,
                         height 1s ease-in-out,
@@ -146,11 +146,11 @@
             left: 50%;
             transform: translate(-50%, -50%);
             pointer-events: auto;
-            
+
             /* 【修改點 1】預設透明度為 0 */
             opacity: 0;
             /* 【修改點 2】加入 opacity 的轉場動畫，時間設為 1.2秒，稍微比展開慢一點點，營造浮現感 */
-            transition: opacity 1.2s ease-in; 
+            transition: opacity 1.2s ease-in;
         }
 
         /* 當加上 .reveal 類別時，圖片顯現 */
@@ -168,7 +168,7 @@
         }
         .rope.top { top: 40px; }
         .rope.bottom { bottom: 40px; }
-        
+
         .rope.vanish { opacity: 0; transform: scaleX(0); }
 
         #shadow-overlay {
@@ -182,8 +182,8 @@
 
         /* --- 按鈕區域 --- */
         #action-buttons {
-            position: fixed;
-            bottom: 130px;
+            position: relative;
+            bottom: -300px;
             left: 0;
             width: 100%;
             display: flex;
@@ -229,7 +229,7 @@
             <div id="shadow-overlay"></div>
             <div class="rope top"></div>
             <div class="rope bottom"></div>
-            
+
             <img id="result-img" src="" alt="籤詩">
         </div>
     </div>
@@ -270,11 +270,11 @@
             drawBtn.classList.add('shaking');
 
             // C. 掉落 (0.6s後)
-            setTimeout(() => { 
+            setTimeout(() => {
                 startScreen.style.filter = 'blur(3px) grayscale(0.1)';
-                animOverlay.style.display = 'flex'; 
+                animOverlay.style.display = 'flex';
                 void magicScroll.offsetWidth; // 強制重繪
-                
+
                 magicScroll.classList.add('falling');
                 // 此階段圖片還是隱藏的，所以看到的是純淨的米色紙捲
             }, 600);
@@ -285,10 +285,10 @@
 
                 ropes.forEach(r => r.classList.add('vanish'));
                 shadowOverlay.classList.add('shadow-vanish');
-                
+
                 // 紙捲變寬
                 magicScroll.classList.add('expanded');
-                
+
                 // 【修改點 3】開始讓圖片顯影
                 resultImg.classList.add('reveal');
 
@@ -314,7 +314,7 @@
             magicScroll.classList.remove('falling', 'expanded');
             ropes.forEach(r => r.classList.remove('vanish'));
             shadowOverlay.classList.remove('shadow-vanish');
-            
+
             // 【修改點 4】重置圖片透明度
             resultImg.classList.remove('reveal');
         }
@@ -374,7 +374,7 @@
             ctx.fillStyle = '#999';
             ctx.font = '24px "Noto Serif JP", serif';
             ctx.fillText("── 此籤誠心求得 ──", width / 2, 900);
-            
+
             const today = new Date();
             const dateStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
             ctx.fillText(dateStr, width / 2, 940);
